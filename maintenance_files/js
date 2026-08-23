@@ -1,0 +1,244 @@
+// Surrogate for Google Tag Manager (gtm.js / gtag/js).
+// Defuses the anti-flicker snippet (calls dataLayer.hide.end() and strips the
+// async-hide class so the page is never left blank), wraps dataLayer.push to
+// fire eventCallback / event_callback / hitCallback exactly once asynchronously
+// (including the arguments-like form that gtag() produces), stubs
+// gtag/google_tag_manager.
+(function () {
+    'use strict';
+
+    // --- constants -----------------------------------------------------------
+
+    const INSTALL_FLAG = '_tp_gtm_installed';
+    const DATALAYER_WRAPPED_FLAG = '_tp_datalayer_wrapped';
+    const ASYNC_HIDE_CLASS = 'async-hide';
+    const FALLBACK_CONTAINER_ID = 'GTM-SURROGATE';
+
+    // --- bail if we already installed ----------------------------------------
+
+    // @ts-ignore runtime global
+    let dl = window.dataLayer;
+    if (dl && dl[INSTALL_FLAG]) return;
+
+    // --- ensure dataLayer is an array ----------------------------------------
+
+    // @ts-ignore runtime global
+    if (!Array.isArray(window.dataLayer)) {
+        // @ts-ignore runtime global
+        window.dataLayer = [];
+    }
+    // @ts-ignore runtime global
+    dl = window.dataLayer;
+
+    // --- capture container id BEFORE unhide flips the flags ------------------
+    // Scan dataLayer.hide for the first own key (not 'end'/'start') whose value
+    // is true — that is the active container id set by the anti-flicker snippet.
+    // We must read this BEFORE unhide() flips the true flags to false.
+
+    function captureContainerId() {
+        const h = dl.hide;
+        if (h && typeof h === 'object') {
+            const keys = Object.keys(h);
+            for (let i = 0; i < keys.length; i++) {
+                const k = keys[i];
+                if (k !== 'end' && k !== 'start' && h[k] === true) {
+                    return k;
+                }
+            }
+        }
+        return FALLBACK_CONTAINER_ID;
+    }
+
+    const containerId = captureContainerId();
+
+    // --- anti-flicker reveal -------------------------------------------------
+    // The publisher inline snippet hides <html class="async-hide"> and arms
+    // dataLayer.hide = { 'GTM-XXXX': true, end: fn }.  Real GTM calls end() on
+    // load.  We do the same so the page is never left blank.
+
+    const noop = function () {};
+
+    function unhide() {
+        // 1. Drive the dataLayer.hide contract.
+        const h = dl.hide;
+        if (h && typeof h === 'object') {
+            // Flip every container-id flag to false (mirrors real GTM behaviour).
+            const keys = Object.keys(h);
+            for (let i = 0; i < keys.length; i++) {
+                if (h[keys[i]] === true) {
+                    h[keys[i]] = false;
+                }
+            }
+            // Call and disarm hide.end.
+            if (typeof h.end === 'function') {
+                try {
+                    h.end();
+                } catch (_) {} // eslint-disable-line no-unused-vars, no-empty
+                h.end = null;
+            }
+        }
+
+        // 2. Belt-and-suspenders DOM strip — only target the known GTM class.
+        try {
+            const html = document.documentElement;
+            if (html && html.classList) {
+                html.classList.remove(ASYNC_HIDE_CLASS);
+            }
+        } catch (_) {} // eslint-disable-line no-unused-vars, no-empty
+    }
+
+    // Run immediately, on DOMContentLoaded, and once after a tick to beat
+    // snippets that install dataLayer.hide after our script executes. The
+    // DOMContentLoaded listener removes itself after firing so it doesn't
+    // accumulate across SPA navigations (document persists for the tab and would
+    // otherwise re-fire unhide on every later synthetic DOMContentLoaded).
+    unhide();
+    function onDOMContentLoaded() {
+        document.removeEventListener('DOMContentLoaded', onDOMContentLoaded);
+        unhide();
+    }
+    try {
+        document.addEventListener('DOMContentLoaded', onDOMContentLoaded);
+    } catch (_) {} // eslint-disable-line no-unused-vars, no-empty
+    setTimeout(unhide, 0);
+
+    // --- wrap dataLayer.push to fire eventCallback ---------------------------
+    // Shared guard: if another surrogate (e.g. google-analytics) already wrapped
+    // dataLayer.push and drained pre-existing entries, skip the drain+wrap to
+    // avoid double-firing eventCallbacks and dropping the prior wrapper.
+    // The gtm-specific work (hide reveal, gtag, google_tag_manager Proxy) is
+    // always performed regardless of this shared flag.
+
+    // @ts-ignore untyped param
+    function scheduleCallback(cb) {
+        // Fire once, async, guarded — matches fireAsync in google-analytics.js.
+        setTimeout(function () {
+            try {
+                cb(containerId);
+            } catch (_) {} // eslint-disable-line no-unused-vars, no-empty
+        }, 0);
+    }
+
+    // Pick the first present callback from a dataLayer item. Handles plain
+    // objects (eventCallback / event_callback / hitCallback) and the
+    // arguments-like objects that gtag() pushes (numeric keys + .length, where
+    // the callback lives inside a nested options object).
+    // Mirrors pickCallback in google-analytics.js — keep the two in sync.
+    // @ts-ignore untyped param
+    function pickCallback(item) {
+        if (!item || typeof item !== 'object') return null;
+
+        if (typeof item.eventCallback === 'function') return item.eventCallback;
+        if (typeof item.event_callback === 'function')
+            return item.event_callback;
+        if (typeof item.hitCallback === 'function') return item.hitCallback;
+
+        // Arguments-like object: scan members for a nested options object.
+        if (typeof item.length === 'number') {
+            for (let k = 0; k < item.length; k++) {
+                const member = item[k];
+                if (member && typeof member === 'object') {
+                    if (typeof member.eventCallback === 'function')
+                        return member.eventCallback;
+                    if (typeof member.event_callback === 'function')
+                        return member.event_callback;
+                    if (typeof member.hitCallback === 'function')
+                        return member.hitCallback;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // @ts-ignore untyped param
+    function fireEventCallback(arg) {
+        const cb = pickCallback(arg);
+        if (cb) {
+            scheduleCallback(cb);
+        }
+    }
+
+    if (!dl[DATALAYER_WRAPPED_FLAG]) {
+        // Drain any pre-existing entries before wrapping push.
+        for (let i = 0; i < dl.length; i++) {
+            fireEventCallback(dl[i]);
+        }
+
+        // Wrap push: compose with any existing wrapper (e.g. from google-analytics
+        // surrogate), then fire any eventCallback for each new argument.
+        const originalPush = dl.push || Array.prototype.push;
+        dl.push = function () {
+            const ret = originalPush.apply(this, arguments);
+            for (let j = 0; j < arguments.length; j++) {
+                fireEventCallback(arguments[j]);
+            }
+            return ret;
+        };
+
+        // Mark the shared dataLayer as wrapped — non-enumerable so it does not
+        // appear in dataLayer iteration. Guarded by try/catch: a CMP may freeze
+        // the dataLayer array, which would throw from defineProperty.
+        try {
+            Object.defineProperty(dl, DATALAYER_WRAPPED_FLAG, { value: true });
+        } catch (_) {} // eslint-disable-line no-unused-vars, no-empty
+    }
+
+    // Mark GTM-specific install complete (non-enumerable so it does not appear
+    // in dataLayer loops).
+    try {
+        Object.defineProperty(dl, INSTALL_FLAG, { value: true });
+    } catch (_) {} // eslint-disable-line no-unused-vars, no-empty
+
+    // --- gtag → pushes to dataLayer ------------------------------------------
+
+    // @ts-ignore runtime global
+    if (typeof window.gtag !== 'function') {
+        // @ts-ignore runtime global
+        window.gtag = function () {
+            // @ts-ignore runtime global
+            window.dataLayer.push(arguments);
+        };
+    }
+
+    // --- google_tag_manager[anyId].dataLayer.set/get -------------------------
+    // Use a Proxy so any container id resolves without throwing.
+
+    const containerStub = {
+        dataLayer: {
+            set: noop,
+            get: function () {
+                return undefined;
+            },
+        },
+    };
+
+    // @ts-ignore runtime global
+    let gtmBase = window.google_tag_manager;
+    if (!gtmBase || typeof gtmBase !== 'object') {
+        gtmBase = {};
+    }
+
+    if (typeof Proxy !== 'undefined') {
+        // @ts-ignore runtime global
+        window.google_tag_manager = new Proxy(gtmBase, {
+            get: function (target, prop) {
+                if (Object.prototype.hasOwnProperty.call(target, prop)) {
+                    return target[prop];
+                }
+                return containerStub;
+            },
+        });
+    } else {
+        // @ts-ignore runtime global
+        window.google_tag_manager = gtmBase;
+    }
+
+    // --- legacy window.ga noop -----------------------------------------------
+
+    // @ts-ignore runtime global
+    if (typeof window.ga !== 'function') {
+        // @ts-ignore runtime global
+        window.ga = noop;
+    }
+})();
