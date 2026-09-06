@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Les mots de Soraya — Fare Mana</title>
+<meta name="description" content="Quelques mots de Soraya pour prendre soin de soi, et les expériences vécues par celles qui ont choisi Fare Mana.">
+<meta property="og:title" content="Les mots de Soraya — Fare Mana">
+<meta property="og:description" content="Une facette plus personnelle de Soraya et de Fare Mana, et les avis de celles qui ont vécu l'expérience.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://faremana.com/les-mots-de-soraya.html">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-page="les-mots-de-soraya">
+
+<header class="site-header" id="site-header"></header>
+
+<!-- ============== LES MOTS DE SORAYA ============== -->
+<section class="mots-hero">
+  <div class="container">
+    <p class="eyebrow center reveal" data-i18n="motsPage.eyebrow">Fare Mana</p>
+    <h1 class="section-title center reveal" data-i18n="motsPage.title">Les mots de Soraya</h1>
+    <p class="script reveal" data-i18n="motsPage.tagline1">Quelques mots pour prendre soin de soi…</p>
+    <p class="script reveal" data-i18n="motsPage.tagline2">avec douceur et parfois avec le sourire.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="quotes-grid" id="quotes-grid"></div>
+  </div>
+</section>
+
+<section class="mots-signoff">
+  <div class="container reveal">
+    <p class="script" data-i18n="motsPage.signOff1">Prenez soin de vous.</p>
+    <p class="script" data-i18n="motsPage.signOff2">Vous comptez.</p>
+    <p class="author" data-i18n="motsPage.signOffAuthor">Soraya — Fare Mana</p>
+  </div>
+</section>
+
+<!-- ============== AVIS CLIENTS ==============
+     Section entièrement conditionnelle : masquée automatiquement par
+     site.js (renderApprovedReviews) tant qu'aucun avis n'a été
+     explicitement approuvé dans DATA.reviewsApproved. Aucun faux avis
+     ne peut jamais s'y afficher. -->
+<section class="alt-bg" data-reviews-section style="display:none;">
+  <div class="container">
+    <p class="eyebrow center reveal" data-i18n="motsPage.reviewsEyebrow">De vraies expériences</p>
+    <h2 class="section-title center reveal" data-i18n="motsPage.reviewsTitle">Elles ont vécu l'expérience Fare Mana</h2>
+
+    <div class="testimonial-filters reveal">
+      <button type="button" class="filter-btn" data-testimonial-filter="all" aria-pressed="true" data-i18n="motsPage.filterAll">Tous les avis</button>
+      <button type="button" class="filter-btn" data-testimonial-filter="bora" aria-pressed="false" data-i18n="destLabels.bora">Bora Bora</button>
+      <button type="button" class="filter-btn" data-testimonial-filter="marseille" aria-pressed="false" data-i18n="destLabels.marseille">Marseille &amp; environs</button>
+    </div>
+
+    <div class="testimonial-grid" data-reviews-grid></div>
+  </div>
+</section>
+
+<!-- ============== VOTRE AVIS COMPTE ============== -->
+<section>
+  <div class="container center reveal" style="max-width:560px;">
+    <p class="eyebrow" data-i18n="motsPage.reviewInviteTitle">Votre avis compte</p>
+    <h2 class="section-title" style="font-size:26px;margin-bottom:14px;" data-i18n="motsPage.reviewInviteTitleLg">Vous avez vécu l'expérience Fare Mana ?</h2>
+    <p style="margin-bottom:24px;" data-i18n="motsPage.reviewInviteText">Vos retours permettent à Fare Mana de continuer à améliorer l'expérience proposée, ici comme ailleurs.</p>
+    <button type="button" class="btn btn-primary" data-open-review-modal data-i18n="motsPage.leaveReview">Laisser un avis</button>
+  </div>
+</section>
+
+<!-- ============== CTA FINAL ============== -->
+<section class="dark-band">
+  <div class="container center reveal">
+    <h2 class="script" style="color:var(--gold-light);font-size:clamp(28px,4vw,40px);margin-bottom:30px;" data-i18n="about.ctaTitle">Prenez soin de vous, c'est honorer la vie.</h2>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="mes-soins.html" class="btn btn-outline-light" style="border-color:rgba(247,241,230,.5);color:var(--cream);" data-i18n="common.discoverSoins">Découvrir les soins</a>
+      <a href="#" class="btn btn-primary" data-booking-cta target="_blank" rel="noopener" data-i18n="common.bookingCta">Prendre rendez-vous</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/site.js" defer></script>
+</body>
+</html>

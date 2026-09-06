@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mes Soins — Fare Mana</title>
+<meta name="description" content="Découvrez les rituels Fare Mana : Kobido, Madérothérapie, Radiofréquence, Cupping Therapy et Massage Polynésien, à Bora Bora et à Marseille.">
+<meta property="og:title" content="Mes Soins — Fare Mana">
+<meta property="og:description" content="Des soins personnalisés pour révéler votre beauté et votre bien-être, organisés en trois univers : Visage, Corps, Massage & Détente.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://faremana.com/mes-soins.html">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-page="mes-soins">
+
+<header class="site-header" id="site-header"></header>
+
+<section class="page-banner">
+  <div class="page-banner-bg" aria-hidden="true"><span></span><span></span></div>
+  <div class="page-banner-inner">
+    <p class="eyebrow" style="color:var(--gold-light);">Fare Mana</p>
+    <h1 data-i18n="soins.title">Mes Soins</h1>
+    <p data-i18n="soins.lead">Des soins personnalisés pour révéler votre beauté et votre bien-être. Chaque rituel s'adapte à vos envies, à Bora Bora comme à Marseille.</p>
+
+    <div class="dest-teaser">
+      <p class="page-banner-picker-label" style="margin-top:18px;font-size:13px;color:var(--hero-text-soft);text-shadow:0 1px 6px rgba(0,0,0,.3);" data-i18n="common.chooseDestination">Choisissez votre destination pour voir les tarifs</p>
+      <div class="page-banner-picker">
+        <button type="button" class="hero-pick-btn" data-pick-dest="bora" data-i18n="destLabels.bora">Bora Bora</button>
+        <button type="button" class="hero-pick-btn" data-pick-dest="marseille" data-i18n="destLabels.marseille">Marseille &amp; environs</button>
+      </div>
+    </div>
+    <div class="dest-detail">
+      <span class="page-banner-pill" data-dest-label></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============== VISAGE ============== -->
+<section class="soins-universe" id="visage">
+  <div class="container">
+    <p class="eyebrow center reveal" data-i18n="soins.eyebrow">Nos soins</p>
+    <h2 class="section-title center reveal" data-i18n="soins.visageTitle">Visage</h2>
+    <p class="section-lead center reveal" data-i18n="soins.visageLead">Sublimez naturellement votre éclat.</p>
+    <div id="soins-visage-grid" style="margin-top:46px;"></div>
+  </div>
+</section>
+
+<!-- ============== CORPS ============== -->
+<section class="soins-universe alt-bg" id="corps">
+  <div class="container">
+    <p class="eyebrow center reveal" data-i18n="soins.eyebrow">Nos soins</p>
+    <h2 class="section-title center reveal" data-i18n="soins.corpsTitle">Corps</h2>
+    <p class="section-lead center reveal" data-i18n="soins.corpsLead">Tonifier, drainer, se sentir bien.</p>
+    <div id="soins-corps-grid" style="margin-top:46px;"></div>
+  </div>
+</section>
+
+<!-- ============== MASSAGE & DÉTENTE ============== -->
+<section class="soins-universe" id="massage-detente">
+  <div class="container">
+    <p class="eyebrow center reveal" data-i18n="soins.eyebrow">Nos soins</p>
+    <h2 class="section-title center reveal" data-i18n="soins.massageTitle">Massage &amp; Détente</h2>
+    <p class="section-lead center reveal" data-i18n="soins.massageLead">Lâcher prise et voyager.</p>
+    <div id="soins-massage-grid" style="margin-top:46px;"></div>
+  </div>
+</section>
+
+<!-- ============== CTA FIN DE PAGE ============== -->
+<section class="dark-band">
+  <div class="container center reveal">
+    <p class="eyebrow eyebrow-light" style="color:var(--gold-light);" data-i18n="soins.ctaEyebrow">Un doute sur votre choix ?</p>
+    <h2 class="section-title" style="color:var(--cream);" data-i18n="soins.ctaTitle">Laissez-vous guider</h2>
+    <p style="color:rgba(247,241,230,.8);max-width:480px;margin:0 auto 28px;" data-i18n="soins.ctaLead">Répondez à 3 questions simples sur l'accueil et découvrez le rituel qui vous correspond.</p>
+    <a href="index.html#quel-soin" class="btn btn-outline-light" style="border-color:rgba(247,241,230,.5);color:var(--cream);" data-i18n="soins.ctaButton">Quel soin est fait pour moi ?</a>
+  </div>
+</section>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<!-- ============== MODALE SOIN ============== -->
+<div class="modal-overlay" id="service-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
+  <div class="modal"></div>
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/site.js" defer></script>
+</body>
+</html>
