@@ -177,10 +177,90 @@ https://formspree.io/f/mljeydrj
 
 Déjà en place dans `DATA.contactFormEndpoint` (`data.js`).
 
-## 6. Vérifications restantes (à faire manuellement)
+## 6. Notification e-mail à chaque nouvel avis (nouveau)
+
+**Objectif** : à chaque avis publié automatiquement, un e-mail de
+notification part vers `faremana44@gmail.com` (prénom, destination,
+soin, note, commentaire, date, e-mail privé du client, et un bouton
+"Gérer cet avis" vers `https://faremana.com/admin.html`).
+
+**Architecture** : entièrement côté serveur, jamais dans le frontend.
+Un *Database Webhook* Supabase se déclenche à chaque `INSERT` dans
+`reviews` et appelle une *Edge Function* (`supabase/functions/notify-new-review/index.ts`,
+déjà écrite dans ce dépôt) qui envoie l'e-mail via
+[Resend](https://resend.com) — un service d'envoi d'e-mails simple,
+avec une offre gratuite (100 e-mails/jour) largement suffisante ici.
+Aucune clé n'est jamais commitée sur GitHub : la clé Resend vit
+uniquement dans les *secrets* du projet Supabase.
+
+L'avis reste publié automatiquement, sans aucune approbation
+préalable : l'e-mail n'est qu'une notification, jamais une étape
+bloquante (si l'envoi échoue, l'avis reste publié quand même).
+
+### Étapes exactes à effectuer vous-même
+
+**A. Créer un compte Resend et récupérer une clé API**
+1. Aller sur [resend.com](https://resend.com) → créer un compte gratuit.
+2. **API Keys** → *Create API Key* → copier la clé (commence par `re_`).
+   Pour démarrer sans configurer de domaine, l'adresse d'expédition par
+   défaut `onboarding@resend.dev` fonctionne (limitée à votre propre
+   compte Resend comme destinataire de test au début — si l'e-mail
+   n'arrive pas, vérifiez sur Resend s'il faut valider votre domaine
+   `faremana.com` dans **Domains** pour envoyer vers `faremana44@gmail.com`
+   sans restriction).
+
+**B. Installer la Supabase CLI (une seule fois), si pas déjà fait**
+```
+npm install -g supabase
+supabase login
+```
+
+**C. Déployer la fonction déjà écrite dans ce dépôt**
+
+Depuis la racine du projet (là où se trouve le dossier `supabase/`) :
+```
+supabase link --project-ref adbwsmypdryfbbqeafnk
+supabase functions deploy notify-new-review
+```
+
+**D. Configurer les secrets de la fonction (jamais dans GitHub)**
+```
+supabase secrets set RESEND_API_KEY=re_votre_cle_ici
+supabase secrets set NOTIFY_TO_EMAIL=faremana44@gmail.com
+```
+(`NOTIFY_TO_EMAIL` est facultatif — `faremana44@gmail.com` est déjà la
+valeur par défaut codée dans la fonction si vous ne définissez pas ce
+secret.)
+
+**E. Créer le Database Webhook dans le tableau de bord Supabase**
+1. **Database → Webhooks → Create a new hook**
+2. Nom : `notify-new-review` (libre)
+3. Table : `reviews`
+4. Événements : cocher uniquement **Insert**
+5. Type : **Supabase Edge Functions**
+6. Sélectionner la fonction `notify-new-review`
+7. Enregistrer
+
+C'est ce webhook qui appelle automatiquement la fonction à chaque
+nouvel avis — aucune autre configuration n'est nécessaire.
+
+### Comment tester
+
+1. Soumettre un vrai avis depuis "Les mots de Soraya" sur le site en
+   ligne.
+2. Vérifier que l'avis apparaît bien publiquement (comme avant).
+3. Vérifier la réception de l'e-mail sur `faremana44@gmail.com`
+   (regarder aussi les spams la première fois).
+4. Vérifier que le bouton "Gérer cet avis" de l'e-mail ouvre bien
+   `https://faremana.com/admin.html`.
+5. En cas de souci, **Supabase → Edge Functions → notify-new-review →
+   Logs** affiche l'erreur exacte (ex. clé Resend manquante ou
+   domaine non vérifié).
+
+## 7. Vérifications restantes (à faire manuellement)
 
 Ce que Claude ne peut pas tester lui-même (aucun accès réseau à
-Supabase/Formspree depuis cet environnement) :
+Supabase/Formspree/Resend depuis cet environnement) :
 
 1. Soumettre un vrai avis depuis "Les mots de Soraya" → vérifier qu'il
    apparaît dans Supabase (Table Editor → `reviews`) et sur le site
@@ -193,3 +273,5 @@ Supabase/Formspree depuis cet environnement) :
    Supabase Auth pour confirmer que RLS bloque bien tout accès.
 4. Envoyer un message via le formulaire Contact → vérifier sa
    réception sur `faremana44@gmail.com` via Formspree.
+5. Configurer Resend + le Database Webhook (section 7) → soumettre un
+   avis test → vérifier la réception de l'e-mail de notification.
