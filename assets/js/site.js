@@ -871,15 +871,27 @@
   }
   function supabaseRest(path, options) {
     const opts = options || {};
-    return fetch(`${DATA.supabase.url}/rest/v1/${path}`, {
-      ...opts,
-      headers: {
-        apikey: DATA.supabase.anonKey,
-        Authorization: `Bearer ${(opts.accessToken) || DATA.supabase.anonKey}`,
-        "Content-Type": "application/json",
-        ...(opts.headers || {}),
-      },
-    });
+    const headers = {
+      apikey: DATA.supabase.anonKey,
+      "Content-Type": "application/json",
+      ...(opts.headers || {}),
+    };
+    // La clé publique ("sb_publishable_...") n'est PAS un JWT : elle ne
+    // doit jamais être envoyée comme jeton "Authorization: Bearer".
+    // Pour les requêtes publiques (anon), le header "apikey" seul
+    // suffit. Un vrai jeton de session (utilisateur authentifié) reste
+    // possible via opts.accessToken si un jour nécessaire côté public.
+    if (opts.accessToken) headers.Authorization = `Bearer ${opts.accessToken}`;
+    return fetch(`${DATA.supabase.url}/rest/v1/${path}`, { ...opts, headers });
+  }
+
+  /** Échappe le texte fourni par les visiteurs avant toute injection
+   *  dans innerHTML (aucune donnée utilisateur ne doit jamais être
+   *  interprétée comme du HTML). */
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
   }
 
   /** Récupère les avis publiés depuis la vue publique Supabase
@@ -910,9 +922,9 @@
         mount.innerHTML = list.map((r) => `
           <article class="card testimonial-card reveal">
             <div class="testimonial-stars" aria-hidden="true">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</div>
-            <p style="font-style:italic;margin-bottom:16px;">“${r.review_text}”</p>
-            <p class="eyebrow" style="margin:0;">${r.first_name}</p>
-            <span class="testimonial-dest-tag">${t(`destLabels.${r.destination}`, DATA.destinations[r.destination].label)}${r.treatment ? " · " + r.treatment : ""}</span>
+            <p style="font-style:italic;margin-bottom:16px;">“${escapeHtml(r.review_text)}”</p>
+            <p class="eyebrow" style="margin:0;">${escapeHtml(r.first_name)}</p>
+            <span class="testimonial-dest-tag">${t(`destLabels.${r.destination}`, DATA.destinations[r.destination].label)}${r.treatment ? " · " + escapeHtml(r.treatment) : ""}</span>
           </article>`).join("");
       });
       sections.forEach((section) => { section.style.display = all.length > 0 ? "" : "none"; });

@@ -72,17 +72,14 @@ window.FareManaData = {
   },
 
   // ----------------------------------------------------------
-  // SERVICE D'ENVOI DES FORMULAIRES (Formspree)
+  // SERVICE D'ENVOI DU FORMULAIRE CONTACT (Formspree)
   // ----------------------------------------------------------
-  // Formspree est un service tiers qui reçoit le formulaire et le
-  // transmet par e-mail — aucune clé secrète n'est exposée ici, un
-  // "endpoint" Formspree est public par conception (comme une URL de
-  // formulaire). TANT QUE la valeur reste "FORMSPREE_ENDPOINT_TODO",
-  // le site n'envoie rien et affiche un message honnête proposant le
-  // contact direct à la place. Voir CONTENT-GUIDE.md pour la marche
-  // à suivre exacte (créer un compte gratuit sur formspree.io, créer
-  // un formulaire, coller son endpoint ici).
-  contactFormEndpoint: "FORMSPREE_ENDPOINT_TODO",
+  // Endpoint officiel Formspree pour le formulaire Contact uniquement.
+  // C'est une URL publique par conception (aucune clé secrète) : la
+  // protection anti-spam est gérée côté Formspree + le honeypot local.
+  // Ne pas réutiliser cette valeur pour le système d'avis, qui est
+  // géré séparément via Supabase (voir plus bas / SUPABASE-SETUP.md).
+  contactFormEndpoint: "https://formspree.io/f/mljeydrj",
 
   // ----------------------------------------------------------
   // AVIS CLIENTS — Supabase (base persistante + publication automatique)
@@ -100,8 +97,13 @@ window.FareManaData = {
   // à suivre exacte (créer le projet, exécuter le script SQL fourni,
   // créer le compte de Soraya, coller les deux valeurs ci-dessous).
   supabase: {
-    url: "SUPABASE_URL_TODO",
-    anonKey: "SUPABASE_ANON_KEY_TODO",
+    url: "https://adbwsmypdryfbbqeafnk.supabase.co",
+    // Nouvelle "Publishable key" Supabase (préfixe sb_publishable_...),
+    // pas un JWT anon "legacy" : c'est public par conception, mais elle
+    // ne doit JAMAIS être envoyée comme jeton "Authorization: Bearer"
+    // (voir supabaseRest() dans site.js). Seul le header "apikey"
+    // l'utilise pour les requêtes publiques.
+    anonKey: "sb_publishable_v5Vaaj2a7eBwoVL36oCkQQ_glYo2hHH",
   },
 
   // ----------------------------------------------------------

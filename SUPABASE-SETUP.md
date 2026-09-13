@@ -1,31 +1,71 @@
 # Configuration Supabase — Système d'avis Fare Mana
 
-Ce document explique **exactement** comment activer le système d'avis
-(publication automatique + suppression par Soraya). Tant que ces étapes
-n'ont pas été suivies, le site reste dans un état sûr : aucun avis ne
-peut être soumis ou affiché, et l'espace `/admin.html` reste bloqué
-avec un message clair. Rien n'est simulé entre-temps.
-
-Aucune de ces étapes ne peut être réalisée par Claude à votre place :
-elles nécessitent un compte que vous seule pouvez créer et posséder.
+**État actuel : configuré et en place.** Ce document ne décrit plus une
+installation à faire, mais l'état réel du système d'avis tel qu'il a
+été mis en place, pour référence et audit futur.
 
 ---
 
-## 1. Créer le projet Supabase
+## 1. Projet Supabase
 
-1. Aller sur [supabase.com](https://supabase.com) → créer un compte gratuit.
-2. Créer un nouveau projet (choisir une région proche de vos visiteurs,
-   ex. Europe).
-3. Noter le mot de passe de la base que vous choisissez à cette étape
-   (à conserver de côté, pas besoin pour la suite de ce guide).
+- Nom : **Fare Mana Avis**
+- Région : West EU (Paris)
+- Data API : activée
+- "Automatically expose new tables" : **désactivé** (aucun privilège
+  n'est jamais implicite — voir le script SQL ci-dessous, entièrement
+  explicite en `grant`/`revoke`)
+- Project URL : `https://adbwsmypdryfbbqeafnk.supabase.co`
 
-## 2. Exécuter le script SQL
+Cette URL est renseignée dans `assets/js/data.js` (`DATA.supabase.url`).
 
-Dans le tableau de bord Supabase → **SQL Editor** → **New query**,
-coller et exécuter exactement ce script :
+## 2. Clé publique utilisée côté navigateur
+
+Le projet utilise la nouvelle génération de clé Supabase, la
+**Publishable key** (préfixe `sb_publishable_...`) — ce n'est pas
+l'ancienne clé "anon" au format JWT.
+
+```js
+supabase: {
+  url: "https://adbwsmypdryfbbqeafnk.supabase.co",
+  anonKey: "sb_publishable_v5Vaaj2a7eBwoVL36oCkQQ_glYo2hHH",
+},
+```
+
+C'est déjà en place dans `data.js`. Cette clé est publique par
+conception (visible dans le code source du navigateur, comme toute clé
+"publishable"/"anon" Supabase) — la vraie protection vient des règles
+RLS ci-dessous, pas du secret de cette valeur.
+
+**Point technique important, déjà pris en compte dans `site.js`** :
+cette clé n'étant pas un JWT, elle ne doit **jamais** être envoyée
+comme jeton `Authorization: Bearer`, seulement comme header `apikey`.
+Pour les requêtes authentifiées (l'espace admin), c'est le vrai jeton
+`session.access_token` renvoyé par Supabase Auth après connexion qui
+sert de `Bearer` — jamais la clé publique.
+
+La **secret key / service_role** ne doit jamais apparaître nulle part
+dans ce projet (elle n'y est pas, et ne doit jamais y être ajoutée).
+
+## 3. Compte admin
+
+- Email : `faremana44@gmail.com`
+- UID : `1fccd2b2-420d-47f8-afce-4eaf5025fedc`
+
+C'est cet UID exact qui est codé en dur dans les policies RLS
+ci-dessous — lui seul a les droits d'administration, quel que soit le
+nombre d'autres comptes qui pourraient exister un jour sur ce projet.
+
+## 4. Script SQL déjà exécuté avec succès
+
+Le script ci-dessous a déjà été exécuté dans le SQL Editor de Supabase
+et a renvoyé *"Success. No rows returned"*. Il est conservé ici tel
+quel, pour référence et audit — **ne pas le réexécuter** (la table
+existe déjà ; le relancer échouerait sur `create table`).
 
 ```sql
--- Table des avis (données complètes, jamais exposée publiquement telle quelle)
+-- ============================================================
+-- TABLE
+-- ============================================================
 create table reviews (
   id uuid primary key default gen_random_uuid(),
   first_name text not null check (char_length(first_name) between 1 and 60),
@@ -37,88 +77,119 @@ create table reviews (
   created_at timestamptz not null default now()
 );
 
--- Vue publique : expose uniquement les colonnes non sensibles.
--- email_private n'y figure jamais.
-create view reviews_public as
-  select id, first_name, destination, treatment, rating, review_text, created_at
-  from reviews;
-
--- Active la sécurité au niveau des lignes (RLS)
 alter table reviews enable row level security;
 
--- Le public peut SOUMETTRE un avis (insertion), rien d'autre sur la table
-create policy "public can submit a review"
+-- Défense en profondeur : on part de zéro, aucun privilège supposé
+-- (cohérent avec un projet créé avec "Automatically expose new
+-- tables" désactivé : aucun GRANT n'est jamais automatique ici).
+revoke all on reviews from anon, authenticated, public;
+
+-- ============================================================
+-- ANON — peut UNIQUEMENT soumettre un avis.
+-- Le GRANT et la POLICY sont tous les deux obligatoires : l'un sans
+-- l'autre ne suffit pas (une policy RLS ne remplace jamais un grant).
+-- ============================================================
+grant insert on reviews to anon;
+
+create policy "anon can insert a review"
   on reviews for insert
   to anon
   with check (true);
 
--- Le public peut LIRE uniquement via la vue reviews_public (pas la table)
-grant select on reviews_public to anon;
+-- Aucun grant select/update/delete n'est donné à anon sur "reviews" :
+-- une lecture ou modification directe de la table est donc IMPOSSIBLE
+-- pour un visiteur, indépendamment de toute policy RLS.
 
--- Seuls les utilisateurs authentifiés (Soraya) peuvent lire la table complète
-create policy "authenticated can read all reviews"
+-- ============================================================
+-- AUTHENTICATED — seul le compte admin (UID exact) peut lire la
+-- table complète et supprimer un avis.
+-- ============================================================
+grant select, delete on reviews to authenticated;
+
+create policy "only admin can select reviews"
   on reviews for select
   to authenticated
-  using (true);
+  using (auth.uid() = '1fccd2b2-420d-47f8-afce-4eaf5025fedc'::uuid);
 
--- Seuls les utilisateurs authentifiés (Soraya) peuvent supprimer un avis
-create policy "authenticated can delete reviews"
+create policy "only admin can delete reviews"
   on reviews for delete
   to authenticated
-  using (true);
+  using (auth.uid() = '1fccd2b2-420d-47f8-afce-4eaf5025fedc'::uuid);
+
+-- Aucune policy UPDATE n'est créée : personne ne peut modifier un
+-- avis existant, seulement le supprimer.
+
+-- ============================================================
+-- VUE PUBLIQUE — expose uniquement les colonnes non sensibles.
+-- ============================================================
+create view reviews_public as
+  select id, first_name, destination, treatment, rating, review_text, created_at
+  from reviews;
+
+grant select on reviews_public to anon;
 ```
 
-Ce script :
-- crée la table complète (avec l'e-mail privé) ;
-- crée une vue publique qui ne contient jamais l'e-mail ;
-- autorise n'importe quel visiteur à **soumettre** un avis (avec les
-  contraintes de validité : note entre 1 et 5, longueur raisonnable,
-  destination valide) ;
-- interdit à tout visiteur non connecté de lire la table complète, de
-  modifier ou de supprimer un avis ;
-- réserve la lecture complète et la suppression au compte authentifié
-  de Soraya.
+### État des droits, résultat de ce script
 
-## 3. Créer le compte de connexion de Soraya
+**anon (visiteur public) :**
+- INSERT sur `reviews` : autorisé (avis valide uniquement)
+- SELECT direct sur `reviews` : impossible (aucun grant)
+- UPDATE / DELETE : impossible
+- SELECT sur `reviews_public` : autorisé (colonnes publiques uniquement)
 
-Dans **Authentication → Users → Add user** :
-- Renseigner son adresse e-mail (ex. `faremana44@gmail.com`) et un mot
-  de passe qu'elle choisit elle-même.
-- Cocher "Auto Confirm User" pour ne pas avoir besoin d'un e-mail de
-  confirmation.
+**authenticated :**
+- SELECT et DELETE possibles *techniquement* (le grant existe pour le
+  rôle au sens large), mais les policies RLS restreignent strictement
+  l'accès réel à `auth.uid() = 1fccd2b2-420d-47f8-afce-4eaf5025fedc` —
+  un autre compte authentifié obtiendrait 0 ligne / 0 suppression.
 
-C'est ce compte, et uniquement celui-ci, qui pourra se connecter sur
-`/admin.html` pour voir et supprimer des avis.
+`email_private` n'apparaît jamais dans `reviews_public` (elle n'est
+même pas sélectionnée dans sa définition) : elle n'est lisible que par
+le compte admin, via la table complète.
 
-## 4. Récupérer les deux clés à coller dans le site
+### Pourquoi `reviews_public` n'utilise pas `security_invoker = true`
 
-Dans **Project Settings → API** :
-- **Project URL** → à coller dans `assets/js/data.js`, remplacer
-  `"SUPABASE_URL_TODO"` par cette URL exacte.
-- **anon / public key** → à coller dans le même fichier, remplacer
-  `"SUPABASE_ANON_KEY_TODO"` par cette clé.
+Supabase recommande en général cette option pour éviter qu'une vue ne
+contourne le RLS de sa table source. Elle ne s'applique pas utilement
+ici :
 
-```js
-supabase: {
-  url: "https://xxxxxxxxxxxx.supabase.co",   // ← votre Project URL
-  anonKey: "eyJhbGciOiJI...",                 // ← votre clé anon/public
-},
+1. `email_private` n'est jamais dans la définition de la vue — qu'elle
+   soit "invoker" ou "definer", cette colonne reste structurellement
+   absente du résultat, indépendamment de ce réglage.
+2. Activer `security_invoker` exigerait que `anon` ait un `grant
+   select` sur `reviews` elle-même (même restreint par colonnes), ce
+   qui autoriserait un accès direct à la table — exactement ce qu'on
+   veut éviter ("SELECT direct sur reviews : interdit").
+
+Si l'outil "Security Advisor" de Supabase signale cette vue comme
+"Security Definer View", c'est attendu et sans risque dans ce cas
+précis (voir le détail ci-dessus) — vous pouvez l'ignorer en
+connaissance de cause.
+
+## 5. Formspree (formulaire Contact — indépendant de Supabase)
+
+Le formulaire Contact utilise Formspree, **sans lien avec le système
+d'avis** :
+
+```
+https://formspree.io/f/mljeydrj
 ```
 
-**Important sur cette clé "anon"** : elle est conçue pour être visible
-côté navigateur (ce n'est pas un secret). La vraie protection vient des
-règles RLS créées à l'étape 2 — c'est pour cela qu'il est essentiel
-d'exécuter le script SQL avant de coller les clés.
+Déjà en place dans `DATA.contactFormEndpoint` (`data.js`).
 
-## 5. Vérifier
+## 6. Vérifications restantes (à faire manuellement)
 
-Une fois les deux valeurs collées :
-- la page "Les mots de Soraya" doit pouvoir accepter une vraie
-  soumission d'avis (publication immédiate) ;
-- `/admin.html` doit permettre à Soraya de se connecter avec le compte
-  créé à l'étape 3, voir les avis, et en supprimer un.
+Ce que Claude ne peut pas tester lui-même (aucun accès réseau à
+Supabase/Formspree depuis cet environnement) :
 
-Si quelque chose ne fonctionne pas après ces 5 étapes, vérifier en
-priorité que le script SQL de l'étape 2 s'est bien exécuté sans erreur
-(l'éditeur SQL de Supabase affiche un message de succès ou d'erreur
-juste après l'exécution).
+1. Soumettre un vrai avis depuis "Les mots de Soraya" → vérifier qu'il
+   apparaît dans Supabase (Table Editor → `reviews`) et sur le site
+   public quelques instants après.
+2. Se connecter sur `/admin.html` avec `faremana44@gmail.com` →
+   vérifier que l'avis apparaît (avec son e-mail privé, visible
+   uniquement ici) → le supprimer → vérifier sa disparition du site
+   public.
+3. Essayer (si possible) de se connecter avec un *autre* compte
+   Supabase Auth pour confirmer que RLS bloque bien tout accès.
+4. Envoyer un message via le formulaire Contact → vérifier sa
+   réception sur `faremana44@gmail.com` via Formspree.
