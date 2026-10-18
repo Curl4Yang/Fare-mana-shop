@@ -141,20 +141,27 @@ soumettre d'avis ni de message de test sans accord.
 - Tous les contenus (textes, prix, téléphones, liens) se modifient dans `data.js` (voir `CONTENT-GUIDE.md`).
 - Tout nouveau texte d'interface reçoit un attribut `data-i18n` et, si possible, une entrée `strings.en`.
 - Ne jamais simuler une fonctionnalité absente : un service non configuré affiche un message clair (principe déjà appliqué dans le site).
-- Un soin `status: "comingSoon"` ne doit jamais être présenté comme réservable.
+- Un soin `status: "comingSoon"` ne doit jamais être présenté comme réservable (mécanisme conservé, aucun soin concerné actuellement).
 - Code et commentaires en français, dans le style du code existant (vanilla JS, pas de dépendance ajoutée sans accord).
 
 ---
 
 ## 8. État actuel (constaté le 2026-10-18)
 
-- `main` et `develop` pointent sur le même commit : `2922469 Fare mana V4` (2026-09-14).
+- `main` est au commit `2922469 Fare mana V4` (2026-09-14). Les modifications V4 ci-dessous sont **en local sur `develop`, non commitées**.
 - Les 7 pages publiques et `admin.html` sont construites et fonctionnelles.
 - Les vraies photos sont en place (soins, destinations, hero, portrait de Soraya).
 - Supabase est configuré : table, règles d'accès, vue publique, compte admin. Les clés publiques sont dans `data.js`.
 - Le endpoint Formspree est renseigné.
-- Les `mapUrl` (Bing Maps) sont renseignées pour les deux destinations.
-- 9 soins, dont 6 en vedette. Le **Massage Polynésien** reste volontairement en `comingSoon`.
+- **Lieu de Bora Bora : Villa Yrondi** (V4). Plus aucune mention du « motu ». Règle de rédaction : « Bora Bora » dans les textes généraux, « Villa Yrondi » pour le lieu exact (Où me retrouver, Contact, adresse, sous-titre de la destination, sélecteurs de destination). Indication de lieu : « Villa Yrondi, Bora Bora, Polynésie française », tant qu'aucune adresse plus précise n'est confirmée.
+- **Itinéraire Villa Yrondi** (`data.js` → `destinations.bora.mapUrl`) : recherche Bing Maps `https://www.bing.com/maps/search?FORM=HDRSC6&q=villa+yrondi&cp=-16.524723%7E-151.735443&lvl=11&style=r`. Le paramètre `cp` ne fait que centrer la carte : ce n'est **pas** une position GPS précise du lieu. L'itinéraire de Marseille est inchangé.
+- L'itinéraire est affiché sur la page **Contact** (bouton « Itinéraire » + carte cliquable) et sur la page **« Où me retrouver »**, avec un bouton « Itinéraire » / « Directions » (`btn btn-ghost`, après « Appeler ») dans chaque bloc destination. Ce bouton est rempli par `renderFindUsPage()` (`[data-block-map]`) à partir de `destinations.*.mapUrl`, sans lien dupliqué dans le HTML. Si un lien manque, il affiche « Itinéraire à venir » et apparaît désactivé (règle CSS `.dest-block-actions [aria-disabled="true"]`).
+- 9 soins, dont 6 en vedette, **tous actifs**.
+- **Massage Polynésien** : actif depuis la V4 **dans les deux destinations**, avec une nouvelle description et un texte détaillé dans la fenêtre « En savoir plus ». Durée « 60 ou 90 min ». **Tarifs confirmés** : Bora Bora 24 000 F CFP (60 min) / 33 000 F CFP (90 min) ; Marseille 80 € (60 min) / 110 € (90 min).
+- **Affichage explicite durée / prix** : le champ facultatif `priceDurations: ["60 min", "90 min"]` (`data.js`) associe chaque prix du tableau `price` à sa durée, dans le même ordre. Seul le Massage Polynésien l'utilise, les autres soins ne changent pas. `site.js` : `priceDurationPairs()` produit les couples ; `formatServicePriceHtml()` les affiche une ligne par durée (`.price-pair`) dans les cartes, la page Tarifs et la fenêtre de détail ; `formatServicePrice()` (texte) les joint par « · », comme dans le résultat du quiz. Format FR « 60 min : 24 000 F CFP », EN « 60 min: 24 000 F CFP ». Aucun prix n'est affiché sans destination.
+- Champ facultatif `details: { title, paragraphs[] }` sur un soin (`data.js`, traduction dans `i18n.js` → `services.<id>.details`) : s'il est présent, la fenêtre de détail l'affiche à la place de `description`. Utilisé pour l'instant par le Massage Polynésien uniquement.
+- **Quiz** (`data.js` → `quiz.resolve`) : pour Corps + « Détente & bien-être », la réponse « Douce & relaxante » recommande le **Massage Polynésien** (alternative : Rituel jambes légères) ; la réponse « Tonique & stimulante » recommande la Madérothérapie (alternative : **Massage Polynésien**). Toutes les autres combinaisons sont inchangées (24 combinaisons au total, dont 1 avec le massage en résultat principal et 1 en alternative).
+- **Bug corrigé** : sur la page Contact en anglais, le bouton d'itinéraire affichait « Directions coming soon » alors qu'un lien existait. `renderContactPage()` met maintenant à jour l'attribut `data-i18n` du bouton selon l'état du lien (`common.itinerary` ou `ouMeRetrouver.mapTodo`).
 
 ---
 
@@ -165,18 +172,22 @@ soumettre d'avis ni de message de test sans accord.
 - [ ] La notification Resend est-elle déployée et active ? (fonction déployée, secrets définis, webhook créé — voir `SUPABASE-SETUP.md` §6)
 - [ ] Tests manuels de bout en bout (`SUPABASE-SETUP.md` §7) : dépôt d'un avis, suppression depuis l'admin, réception Formspree.
 
+À confirmer / décider (V4) :
+- [ ] Adresse précise de la Villa Yrondi (actuellement « Villa Yrondi / Bora Bora, Polynésie française »).
+- [ ] Horaires de Bora Bora à la Villa Yrondi (inchangés : « Sur réservation – 7j/7 »).
+- [ ] Vérifier visuellement que le lien Bing Maps affiche bien la Villa Yrondi (la page s'ouvre sur bing.com, mais son contenu n'a pas pu être lu automatiquement).
+
 Contenu en attente :
 - [ ] Biographie définitive de Soraya (`qui-suis-je.html`, section « Mon Parcours »).
 - [ ] Vrais avis clients : vérifier si des témoignages d'exemple restent dans `data.js` (`destinations.*.testimonials`).
 - [ ] Horaires précis (actuellement indicatifs).
 - [ ] Prix « Madérothérapie + Lipocavitation » (« Tarif sur demande »).
 - [ ] Nom de l'institut partenaire à Marseille (actuellement générique).
-- [ ] Décision sur l'activation du Massage Polynésien.
 - [ ] Traductions anglaises complètes (descriptions, avis, citations).
 - [ ] Finition visuelle de `mes-soins.html` sur grand écran (cartes jugées trop petites).
 
 Documentation :
-- [ ] La liste TODO de `CONTENT-GUIDE.md` est en partie obsolète (photos, Google Maps, Formspree) et contient des doublons. À nettoyer.
+- [ ] La liste TODO de `CONTENT-GUIDE.md` est en partie obsolète (photos, Google Maps, Formspree, activation du Massage Polynésien) et contient des doublons. À nettoyer.
 
 ---
 
@@ -189,3 +200,7 @@ Documentation :
 | 2026-09-13 | `dd8ac3f`, `df82e5f` | Activation des avis Supabase, corrections |
 | 2026-09-14 | `cdfab1a` « Final Faremana », `2922469` « Fare mana V4 » | Version actuellement en ligne (favicons mis à jour) |
 | 2026-10-18 | — | Reprise du développement V4 sur `develop`, création de ce fichier |
+| 2026-10-18 | V4 — modif. 1 (non commitée) | Bora Bora : le motu Only You est remplacé par la Villa Yrondi (data, i18n, 6 pages HTML, site.js). Lien d'itinéraire Bora Bora vidé en attendant le nouveau |
+| 2026-10-18 | V4 — modif. 2 (non commitée) | Massage Polynésien activé : nouvelle description, texte détaillé « En savoir plus » (champ `details`), traductions EN |
+| 2026-10-18 | V4 — finalisation (non commitée) | Tarifs du massage confirmés, massage disponible dans les deux destinations, ajout au quiz (détente), itinéraire Bing Maps Villa Yrondi, correction du bouton d'itinéraire sur la page Contact en anglais |
+| 2026-10-18 | V4 — derniers ajustements (non commités) | Tarifs du massage affichés explicitement par durée (`priceDurations`), bouton « Itinéraire » ajouté aux deux destinations de la page « Où me retrouver ». Modifications V4 validées ; publication prévue manuellement via GitHub Desktop |

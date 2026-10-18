@@ -115,17 +115,19 @@ window.FareManaData = {
       id: "bora",
       label: "Bora Bora",
       shortLabel: "Bora Bora",
-      subLabel: "Sur le Motu",
+      subLabel: "Villa Yrondi",
       currency: "XPF",
       formatPrice: (n) => `${n.toLocaleString("fr-FR")} F CFP`,
       phone: "+689 89 60 20 54",
       phoneHref: "tel:+68989602054",
       whatsappHref: "https://wa.me/68989602054",
-      addressLines: ["Sur le Motu Only You", "Bora Bora, Polynésie française"],
+      addressLines: ["Villa Yrondi", "Bora Bora, Polynésie française"], // TODO: adresse précise à confirmer
       hours: "Sur réservation – 7j/7", // TODO: confirmer horaires précis
-      mapUrl: "https://www.bing.com/maps/search?FORM=QBMV&style=r&ss=id.local_ypid%3A%22YN8142x4382217399443009814%22&q=ONLY+YOU+Motu%2C+Motu+ONLY+YOU%2C+Bora+Bora%2C+%C3%8Eles+Sous-le-Vent+98730%2C+Polyn%C3%A9sie+fran%C3%A7aise&st=ONLY+YOU+Motu&sfa=Motu+ONLY+YOU%2C+Bora+Bora%2C+%C3%8Eles+Sous-le-Vent+98730%2C+Polyn%C3%A9sie+fran%C3%A7aise&cp=-16.463712%7E-151.769452&lvl=14.5",
+      // Recherche Bing Maps "Villa Yrondi". Les coordonnées "cp" ne font que
+      // centrer la carte : ce n'est PAS une position GPS précise du lieu.
+      mapUrl: "https://www.bing.com/maps/search?FORM=HDRSC6&q=villa+yrondi&cp=-16.524723%7E-151.735443&lvl=11&style=r",
       mapImage: "assets/images/contact/map-bora.jpg",
-      heroKicker: "Bora Bora · Sur le Motu",
+      heroKicker: "Bora Bora · Villa Yrondi",
       timezone: "Pacific/Tahiti", // UTC-10, pas de changement heure été/hiver
       heroImages: {
         morning: "assets/images/hero/hero-bora-morning.jpg",
@@ -136,9 +138,9 @@ window.FareManaData = {
       experienceImage: "assets/images/experience/bora.jpg",
       experience: {
         title: "Une parenthèse au paradis",
-        intro: "Sur le Motu, face au lagon turquoise, laissez-vous porter par la douceur du lieu et l'expertise de soins sur-mesure. Un moment suspendu, rien que pour vous.",
+        intro: "À Bora Bora, laissez-vous porter par la douceur du lieu et l'expertise de soins sur-mesure. Un moment suspendu, rien que pour vous.",
         features: [
-          { title: "Sur le Motu", text: "Un cadre exclusif et intimiste, au cœur du lagon." },
+          { title: "Un cadre intimiste", text: "Un lieu exclusif, entièrement dédié à votre bien-être." },
           { title: "Au rythme du lagon", text: "Une atmosphère apaisante propice à la détente absolue." },
           { title: "Sur rendez-vous", text: "Des créneaux limités pour une attention 100% personnalisée." },
         ],
@@ -313,12 +315,27 @@ window.FareManaData = {
       category: "corps",
       featured: true,
       signature: false,
-      status: "comingSoon", // À VENIR — ne pas présenter comme réservable
+      status: "active",
       duration: "60 ou 90 min",
       image: "assets/images/services/massage-polynesien.jpg",
-      description: "Un massage traditionnel aux mouvements fluides et généreux, pour une évasion complète du corps et de l'esprit.",
+      description: "Inspiré du Taurumi, le massage traditionnel polynésien, ce soin associe des mouvements longs, fluides et enveloppants, réalisés avec du monoï traditionnel. Il invite à relâcher les tensions, à détendre profondément le corps et à retrouver une sensation d'harmonie et de bien-être. Un véritable voyage sensoriel au cœur des traditions polynésiennes.",
+      // Texte détaillé affiché dans la fenêtre "En savoir plus" (facultatif :
+      // sans ce champ, la fenêtre affiche simplement "description").
+      details: {
+        title: "Découvrez le Massage Polynésien",
+        paragraphs: [
+          "Inspiré du Taurumi, ce massage puise son essence dans les traditions ancestrales polynésiennes.",
+          "Pratiqué avec du monoï, il associe des mouvements fluides, profonds et enveloppants, adaptés aux besoins de chacun.",
+          "Ce rituel favorise le relâchement des tensions, apaise l'esprit et procure une profonde sensation de détente.",
+          "Un moment privilégié pour se reconnecter à soi et profiter pleinement de la douceur de vivre polynésienne.",
+          "Durée du soin : 60 ou 90 minutes.",
+        ],
+      },
       benefits: ["Détente profonde", "Lâcher-prise", "Évasion sensorielle"],
+      // Tarifs confirmés (V4). "priceDurations" associe chaque prix à sa
+      // durée, dans le même ordre (affichage "60 min : 24 000 F CFP").
       price: { bora: [24000, 33000], marseille: [80, 110] },
+      priceDurations: ["60 min", "90 min"],
     },
   ],
 
@@ -371,7 +388,9 @@ window.FareManaData = {
         return { main: "maderotherapie-lipocavitation", alt: "maderotherapie" };
       }
       if (objectif === "detente") {
-        return { main: "maderotherapie", alt: "jambes-legeres" };
+        // Détente douce -> Massage Polynésien ; détente tonique -> Madérothérapie.
+        if (experience === "douce") return { main: "massage-polynesien", alt: "jambes-legeres" };
+        return { main: "maderotherapie", alt: "massage-polynesien" };
       }
       return { main: "maderotherapie", alt: "ventre-plat" };
     },

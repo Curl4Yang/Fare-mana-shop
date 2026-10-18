@@ -492,13 +492,32 @@
     return t(`durationOverrides.${service.id}`, service.duration);
   }
 
+  /** Couples "durée : prix" pour un soin à plusieurs tarifs dont les
+   *  durées sont déclarées (service.priceDurations). Sinon null. */
+  function priceDurationPairs(service, destId) {
+    const price = service.price[destId];
+    if (!Array.isArray(price) || !Array.isArray(service.priceDurations)) return null;
+    const dest = getDestinationData(destId);
+    const sep = getLanguage() === "fr" ? " : " : ": ";
+    return price.map((p, i) => `${service.priceDurations[i]}${sep}${dest.formatPrice(p)}`);
+  }
+
   function formatServicePrice(service, destId) {
     if (!destId) return null; // aucune destination choisie -> jamais de prix affiché
     const price = service.price[destId];
     const dest = getDestinationData(destId);
     if (price === "onDemand") return t("common.onDemandPrice", "Tarif sur demande");
+    const pairs = priceDurationPairs(service, destId);
+    if (pairs) return pairs.join(" · ");
     if (Array.isArray(price)) return price.map((p) => dest.formatPrice(p)).join(" / ");
     return dest.formatPrice(price);
+  }
+
+  /** Variante HTML : une ligne par couple durée/prix, sinon identique. */
+  function formatServicePriceHtml(service, destId) {
+    const pairs = destId ? priceDurationPairs(service, destId) : null;
+    if (pairs) return pairs.map((p) => `<span class="price-pair">${p}</span>`).join("");
+    return formatServicePrice(service, destId);
   }
 
   /* ============================================================
@@ -520,7 +539,7 @@
     observeReveals();
   }
   function serviceCardHtml(s, destId) {
-    const priceLabel = formatServicePrice(s, destId);
+    const priceLabel = formatServicePriceHtml(s, destId);
     const photo = s.image
       ? `<img src="${s.image}" alt="" loading="lazy">`
       : `<span class="visually-hidden">Photo de ${s.name}</span>${flowerSvg()}`;
@@ -575,7 +594,7 @@
   };
 
   function soinCardHtml(s, destId) {
-    const priceLabel = formatServicePrice(s, destId);
+    const priceLabel = formatServicePriceHtml(s, destId);
     const photo = s.image ? `<img src="${s.image}" alt="" loading="lazy">` : flowerSvg();
     let priceArea;
     if (s.status === "comingSoon") {
@@ -694,7 +713,7 @@
     const displayName = isSignature && s.ritualName
       ? `${t(`ritualNames.${s.id}`, s.ritualName)} — ${t(`services.${s.id}.name`, s.name)}`
       : t(`services.${s.id}.name`, s.name);
-    const priceLabel = formatServicePrice(s, destId);
+    const priceLabel = formatServicePriceHtml(s, destId);
     let priceArea;
     if (s.status === "comingSoon") {
       priceArea = `<span class="tarif-price">${t("common.comingSoon", "Bientôt disponible")}</span>`;
@@ -772,8 +791,14 @@
       root.querySelectorAll("[data-contact-address]").forEach((el) => { el.innerHTML = dest.addressLines.map((line, i) => t(`destAddress.${destId}.l${i}`, line)).join("<br>"); });
       root.querySelectorAll("[data-contact-hours]").forEach((el) => { el.textContent = t(`destHours.${destId}`, dest.hours); });
       root.querySelectorAll("[data-contact-map]").forEach((el) => {
-        if (dest.mapUrl) { el.setAttribute("href", dest.mapUrl); el.removeAttribute("aria-disabled"); el.target = "_blank"; el.rel = "noopener noreferrer"; el.textContent = t("common.itinerary", "Itinéraire"); }
-        else { el.setAttribute("aria-disabled", "true"); el.removeAttribute("href"); el.textContent = t("ouMeRetrouver.mapTodo", "Itinéraire à venir"); }
+        // La clé data-i18n (et son texte français) suit l'état du lien :
+        // sinon applyStaticTranslations() réafficherait "Itinéraire à venir".
+        const [key, fr] = dest.mapUrl ? ["common.itinerary", "Itinéraire"] : ["ouMeRetrouver.mapTodo", "Itinéraire à venir"];
+        el.setAttribute("data-i18n", key);
+        el.dataset.i18nDefault = fr;
+        el.textContent = t(key, fr);
+        if (dest.mapUrl) { el.setAttribute("href", dest.mapUrl); el.removeAttribute("aria-disabled"); el.target = "_blank"; el.rel = "noopener noreferrer"; }
+        else { el.setAttribute("aria-disabled", "true"); el.removeAttribute("href"); }
       });
       root.querySelectorAll("[data-contact-map-link]").forEach((el) => {
         if (dest.mapUrl) { el.setAttribute("href", dest.mapUrl); el.removeAttribute("aria-disabled"); }
@@ -791,7 +816,7 @@
       const introEl = root.querySelector("[data-contact-intro]");
       if (introEl) {
         const frFallback = destId === "bora"
-          ? "Pour toute question, réservation ou demande particulière, n'hésitez pas à me contacter — sur le Motu, je suis à votre écoute."
+          ? "Pour toute question, réservation ou demande particulière, n'hésitez pas à me contacter — à Bora Bora, je suis à votre écoute."
           : "Pour toute question, réservation ou demande particulière, n'hésitez pas à me contacter — à Marseille et ses environs, je suis à votre écoute.";
         introEl.textContent = t(`contactPage.intro${destId === "bora" ? "Bora" : "Marseille"}`, frFallback);
       }
@@ -952,8 +977,13 @@
     if (!s) return;
     lastFocusedEl = document.activeElement;
     const overlay = document.getElementById("service-modal");
-    const priceLabel = formatServicePrice(s, destId);
+    const priceLabel = formatServicePriceHtml(s, destId);
     const imageHtml = s.image ? `<img src="${s.image}" alt="">` : flowerSvg();
+    // Texte détaillé facultatif (s.details) : remplace la description courte.
+    const descHtml = s.details
+      ? `<p class="eyebrow" data-i18n="services.${s.id}.details.title">${s.details.title}</p>
+        ${s.details.paragraphs.map((p, i) => `<p class="desc" data-i18n="services.${s.id}.details.paragraphs.${i}">${p}</p>`).join("")}`
+      : `<p class="desc" data-i18n="services.${s.id}.description">${s.description}</p>`;
     let priceDisplay = `<strong>${t("common.comingSoon", "Bientôt disponible")}</strong>`;
     if (s.status !== "comingSoon") {
       priceDisplay = destId
@@ -966,7 +996,7 @@
       <div class="modal-body">
         <h3 id="modal-title" data-i18n="services.${s.id}.name">${s.name}</h3>
         <p class="subtitle" data-i18n="services.${s.id}.subtitle">${s.subtitle}</p>
-        <p class="desc" data-i18n="services.${s.id}.description">${s.description}</p>
+        ${descHtml}
         <ul class="modal-benefits">${s.benefits.map((b, i) => `<li data-i18n="services.${s.id}.benefits.${i}">${b}</li>`).join("")}</ul>
         <div class="modal-price-row">
           <span>${durationText(s)} · ${s.category === "visage" ? t("common.filterFace", "Soin visage") : t("common.filterBody", "Soin corps")}</span>
@@ -1271,8 +1301,9 @@
       const main = DATA.services.find((s) => s.id === rec.main);
       const alt = DATA.services.find((s) => s.id === rec.alt);
       const mainName = t(`services.${main.id}.name`, main.name);
+      // Durées déjà incluses dans le prix détaillé ("60 min : …") -> pas de doublon.
       const priceLine = destId
-        ? `${durationText(main)} · ${formatServicePrice(main, destId)}`
+        ? (priceDurationPairs(main, destId) ? formatServicePrice(main, destId) : `${durationText(main)} · ${formatServicePrice(main, destId)}`)
         : `${durationText(main)} · <button type="button" class="price-prompt-link" data-quiz-pick-dest>${t("common.chooseDestinationShort", "choisir une destination pour voir le tarif")}</button>`;
       root.innerHTML = `
         <div class="quiz-result">

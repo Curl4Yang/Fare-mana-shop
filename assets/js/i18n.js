@@ -98,7 +98,7 @@ window.FareManaI18n = {
         marseille: "Marseille",
       },
       destPicker: {
-        bora: "Bora Bora — On the Motu",
+        bora: "Bora Bora — Villa Yrondi",
         marseille: "Marseille & surroundings",
       },
       home: {
@@ -149,10 +149,10 @@ window.FareManaI18n = {
         title: "Where to find me",
         lead: "Two places, one and the same attention. Wherever you are, I welcome you with the same care.",
         yourDestination: "Your destination",
-        boraEyebrow: "Bora Bora · On the Motu",
+        boraEyebrow: "Bora Bora · Villa Yrondi",
         boraTitle: "A paradise getaway",
-        boraIntro: "On the Motu, facing the turquoise lagoon, let yourself be carried by the gentleness of the place and the expertise of tailor-made treatments. A suspended moment, just for you.",
-        boraF0: "On the Motu", boraF0Text: "An exclusive, intimate setting, at the heart of the lagoon.",
+        boraIntro: "At Villa Yrondi, in Bora Bora, let yourself be carried by the gentleness of the place and the expertise of tailor-made treatments. A suspended moment, just for you.",
+        boraF0: "Villa Yrondi", boraF0Text: "An exclusive, intimate setting dedicated to your treatments.",
         boraF1: "At the lagoon's pace", boraF1Text: "A soothing atmosphere ideal for relaxation.",
         boraF2: "By appointment", boraF2Text: "Limited slots for personalised attention.",
         marseilleEyebrow: "Marseille & surroundings",
@@ -167,7 +167,7 @@ window.FareManaI18n = {
         mapTodo: "Directions coming soon",
       },
       destSubLabel: {
-        bora: "On the Motu",
+        bora: "Villa Yrondi",
         marseille: "At home or in a partner institute",
       },
       destHours: {
@@ -175,7 +175,7 @@ window.FareManaI18n = {
         marseille: "Monday to Saturday, 9am – 7pm",
       },
       destAddress: {
-        bora: { l0: "On the Motu Only You", l1: "Bora Bora, French Polynesia" },
+        bora: { l0: "Villa Yrondi", l1: "Bora Bora, French Polynesia" },
         marseille: { l0: "Marseille and surrounding area", l1: "At home or in a partner institute" },
       },
       tarifsPage: {
@@ -197,7 +197,7 @@ window.FareManaI18n = {
         title: "Contact",
         tagline: "I'm here to listen",
         teaserIntro: "Where would you like to get in touch with me? Choose your destination to see my contact details.",
-        introBora: "For any question, booking or special request, feel free to contact me — on the Motu, I'm listening.",
+        introBora: "For any question, booking or special request, feel free to contact me — in Bora Bora, I'm listening.",
         introMarseille: "For any question, booking or special request, feel free to contact me — in Marseille and the surrounding area, I'm listening.",
         phoneLabel: "Phone",
         whatsappLabel: "WhatsApp",
@@ -254,7 +254,7 @@ window.FareManaI18n = {
         horizonsTitle: "Same attention, two settings",
         horizonsLead: "The aim isn't to compare the two destinations, but to show that Fare Mana carries the same care and the same philosophy in two different settings.",
         boraText: "The wild beauty, the turquoise lagoon, Polynesian traditions and harmony with nature inspire me every day.",
-        boraSubtitle: "On the Motu",
+        boraSubtitle: "My source of inspiration",
         marseilleSubtitle: "My home ground",
         marseilleText: "My city of the heart, my home ground, where I welcome you with the same passion and the same commitment to quality.",
         transitionEyebrow: "A more personal side",
@@ -325,16 +325,26 @@ window.FareManaI18n = {
         },
         "massage-polynesien": {
           name: "Polynesian Massage", subtitle: "Escape & release",
-          description: "A traditional massage with flowing, generous movements, for a complete escape for body and mind.",
+          description: "Inspired by Taurumi, the traditional Polynesian massage, this treatment combines long, flowing and enveloping movements, performed with traditional monoi oil. It invites you to release tension, deeply relax the body and rediscover a feeling of harmony and wellbeing. A true sensory journey to the heart of Polynesian traditions.",
+          details: {
+            title: "Discover the Polynesian Massage",
+            paragraphs: [
+              "Inspired by Taurumi, this massage draws its essence from ancestral Polynesian traditions.",
+              "Performed with monoi oil, it combines flowing, deep and enveloping movements, adapted to each person's needs.",
+              "This ritual encourages the release of tension, soothes the mind and brings a deep feeling of relaxation.",
+              "A special moment to reconnect with yourself and fully enjoy the gentle Polynesian way of life.",
+              "Treatment duration: 60 or 90 minutes.",
+            ],
+          },
           benefits: ["Deep relaxation", "Letting go", "Sensory escape"],
         },
       },
       destinations: {
         bora: {
           experienceTitle: "A paradise getaway",
-          experienceIntro: "On the Motu, facing the turquoise lagoon, let yourself be carried by the gentleness of the place and the expertise of tailor-made treatments. A suspended moment, just for you.",
+          experienceIntro: "In Bora Bora, let yourself be carried by the gentleness of the place and the expertise of tailor-made treatments. A suspended moment, just for you.",
           features: {
-            f0: { title: "On the Motu", text: "An exclusive, intimate setting, at the heart of the lagoon." },
+            f0: { title: "An intimate setting", text: "An exclusive place, entirely dedicated to your wellbeing." },
             f1: { title: "At the lagoon's pace", text: "A soothing atmosphere ideal for total relaxation." },
             f2: { title: "By appointment", text: "Limited slots for 100% personalised attention." },
           },
